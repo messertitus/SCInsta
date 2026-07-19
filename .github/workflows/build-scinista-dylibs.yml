@@ -1,0 +1,107 @@
+name: Build SCInsta sideload libraries
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build dylibs
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -d "/Applications/Xcode.app" ]; then
+            XCODE_APP="/Applications/Xcode.app"
+          else
+            shopt -s nullglob
+            XCODE_APPS=(/Applications/Xcode*.app)
+            if [ "${#XCODE_APPS[@]}" -gt 0 ]; then
+              XCODE_APP="$(printf '%s\n' "${XCODE_APPS[@]}" | sort | tail -n 1)"
+            else
+              XCODE_APP=""
+            fi
+          fi
+
+          if [ -z "${XCODE_APP}" ] || [ ! -d "${XCODE_APP}" ]; then
+            echo "No full Xcode installation found in /Applications." >&2
+            exit 1
+          fi
+
+          sudo xcode-select -s "${XCODE_APP}/Contents/Developer"
+          echo "Selected Xcode: ${XCODE_APP}"
+
+      - name: Log Xcode and SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          xcrun --sdk iphoneos --show-sdk-path
+
+      - name: Install Theos
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=${HOME}/theos" >> "${GITHUB_ENV}"
+          echo "${HOME}/theos/bin" >> "${GITHUB_PATH}"
+
+      - name: Run classifier tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tests/reel_filter_classifier_tests.py
+
+      - name: Build sideload dylibs
+        shell: bash
+        env:
+          THEOS: ${{ env.THEOS }}
+        run: |
+          set -euo pipefail
+          export THEOS="${HOME}/theos"
+          make clean
+          rm -rf .theos
+          make SIDELOAD=1 TARGET=iphone:clang:latest:15.0
+
+      - name: Collect dylibs
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build-artifacts
+          mkdir -p build-artifacts
+
+          while IFS= read -r dylib; do
+            echo "Found dylib: ${dylib}"
+            cp "${dylib}" "build-artifacts/$(basename "${dylib}")"
+          done < <(find . -type f \( -name 'SCInsta.dylib' -o -name 'FLEXing.dylib' -o -name 'libflex.dylib' \) -print)
+
+          if [ ! -f build-artifacts/SCInsta.dylib ]; then
+            echo "SCInsta.dylib was not produced." >&2
+            exit 1
+          fi
+
+          if find build-artifacts -type f \( -name '*.ipa' -o -name '*.mobileprovision' -o -name '*.provisionprofile' -o -name '*.p12' -o -name '*.cer' \) | grep -q .; then
+            echo "Refusing to upload signing, provisioning, IPA, or Instagram app files." >&2
+            exit 1
+          fi
+
+          find build-artifacts -type f -print
+
+      - name: Upload sideload libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: scinsta-sideload-libs
+          path: build-artifacts/*.dylib
+          if-no-files-found: error
