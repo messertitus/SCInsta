@@ -87,7 +87,7 @@ jobs:
           while IFS= read -r dylib; do
             echo "Found dylib: ${dylib}"
             cp "${dylib}" "build-artifacts/$(basename "${dylib}")"
-          done < <(find . -type f \( -name 'SCInsta.dylib' -o -name 'FLEXing.dylib' -o -name 'libflex.dylib' \) -print)
+          done < <(find . -type f \( -name 'SCInsta.dylib' -o -name 'FLEXing.dylib' -o -iname 'libflex.dylib' \) -print)
 
           if [ ! -f build-artifacts/SCInsta.dylib ]; then
             echo "SCInsta.dylib was not produced." >&2
