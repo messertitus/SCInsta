@@ -297,7 +297,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 // Suggested posts/reels
 %hook IGMainFeedListAdapterDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
-    NSArray *filteredObjs = removeItemsInList(%orig, YES);
+    NSArray *originalItems = %orig;
+    NSArray *filteredObjs = removeItemsInList(originalItems, YES);
 
     // Remove loading spinner at end of feed (if 5 or less items in feed)
     NSUInteger arrayLength = [filteredObjs count];
@@ -315,7 +316,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %end
 %hook IGSundialFeedDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
-    NSArray *filteredList = removeItemsInList(%orig, NO);
+    NSArray *originalItems = %orig;
+    NSArray *filteredList = removeItemsInList(originalItems, NO);
 
     if ([SCIUtils getBoolPref:@"prevent_doom_scrolling"]) {
         double reelCount = [SCIUtils getDoublePref:@"doom_scrolling_reel_count"];
@@ -328,7 +330,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGContextualFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        NSArray *originalItems = %orig;
+        return removeItemsInList(originalItems, NO);
     }
 
     return %orig;
@@ -337,7 +340,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGVideoFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        NSArray *originalItems = %orig;
+        return removeItemsInList(originalItems, NO);
     }
 
     return %orig;
@@ -346,7 +350,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGChainingFeedViewController
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        NSArray *originalItems = %orig;
+        return removeItemsInList(originalItems, NO);
     }
 
     return %orig;
@@ -441,7 +446,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook IGExploreListKitDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        NSArray *originalItems = %orig;
+        return removeItemsInList(originalItems, NO);
     }
 
     return %orig;
@@ -451,7 +457,8 @@ static NSArray *removeItemsInList(NSArray *list, BOOL isFeed) {
 %hook _TtC28IGExploreViewControllerSwift26IGExploreListKitDataSource
 - (NSArray *)objectsForListAdapter:(id)arg1 {
     if ([SCIUtils getBoolPref:@"hide_ads"]) {
-        return removeItemsInList(%orig, NO);
+        NSArray *originalItems = %orig;
+        return removeItemsInList(originalItems, NO);
     }
 
     return %orig;
