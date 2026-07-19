@@ -5,7 +5,10 @@
     if ([SCIUtils getBoolPref:@"follow_request_confirm"]) {
         NSLog(@"[SCInsta] Confirm follow request triggered");
 
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        void (^originalAction)(void) = ^{
+            %orig;
+        };
+        [SCIUtils showConfirmation:originalAction];
     } else {
         return %orig;
     }
@@ -14,7 +17,10 @@
     if ([SCIUtils getBoolPref:@"follow_request_confirm"]) {
         NSLog(@"[SCInsta] Confirm follow request triggered");
 
-        [SCIUtils showConfirmation:^(void) { %orig; }];
+        void (^originalAction)(void) = ^{
+            %orig;
+        };
+        [SCIUtils showConfirmation:originalAction];
     } else {
         return %orig;
     }
